@@ -1,0 +1,27 @@
+#Config file for weather / train access
+# lines are 
+#host;trainsAccessToken;trainsURL;trainsStationQuery;trainsFingerprint;trainsStation;trainsDestinations;trainsRows;
+#weatherAccessToken;weatherURL;weatherQuery;weatherFingerprint;weatherCityCodes
+#sleepMode;updateIntervals;noChangeTimeout;colWidthsHeight;fieldWidths;rotation;displayRows;weatherCityNames;ADC_CAL
+esp8266-trainsA
+11111111-2222-3333-4444-555555555555
+https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb11.asmx
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tns="http://thalesgroup.com/RTTI/2013-11-28/Token/types" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://thalesgroup.com/RTTI/2017-10-01/ldb/"><SOAP-ENV:Header><tns:AccessToken><tns:TokenValue>%t</tns:TokenValue></tns:AccessToken></SOAP-ENV:Header><ns0:Body><ns1:GetDepartureBoardRequest><ns1:numRows>%r</ns1:numRows><ns1:crs>%s</ns1:crs><ns1:filterCrs>%d</ns1:filterCrs><ns1:filterType>to</ns1:filterType></ns1:GetDepartureBoardRequest></ns0:Body></SOAP-ENV:Envelope>
+E4 F9 57 BF 7C EB 5D 34 06 4A D8 E1 76 95 6E 5C 01 C7 D6 E0
+SAC,SAC,SAC,STP
+STP,BTN,BFR,FPK
+20
+11111112222223333334444445555555
+https://api.openweathermap.org/data/2.5/forecast?id=%s&mode=json&appid=%t
+null
+6C 9D 1E 27 F1 13 7B C7 B6 15 90 13 F2 D0 29 97 A4 5B 3F 7E
+6615330,2648372,2643741,2634825
+1
+60,300
+180000
+44,66,20,100,100,20
+5,8,2,12,12
+3
+11
+St Albans,Godalming,London,Walton-On-Thames
+0.96
