@@ -34,6 +34,7 @@ Use samae construction details as trainsAccess
 ## Set up
 - Use BaseSuoort library https://github.com/roberttidey/BaseSupport
 - Modify BaseConfig.h password fields to suit personal needs
+- Uncomment FASTCONNECT in BaseConfig.h as required 
 - Compile with Arduino IDE. Memory should be set to 2MB firmware / 2MB Spiffs to allow OTA updates
 - Serial upload
 - Use the WifiManager AP to select and set up wifi connection
