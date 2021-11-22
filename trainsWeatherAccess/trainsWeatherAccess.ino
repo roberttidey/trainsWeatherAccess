@@ -156,7 +156,7 @@ int tagPresent[C_MAX] ={0,0,0,0,0,0,0,0};
 
 int displayRows = 11;
 int colWidths[S_MAX];
-int fieldWidths[5];
+int fieldWidths[S_MAX];
 String colHdrs[S_MAX] = {"STD","ETD","PL","From","To"};
 int rotation = 1;
 
@@ -296,7 +296,7 @@ void loadConfig() {
 		Serial.print(F("weatherCityNames:"));Serial.println(weatherCityNamesString);
 		Serial.print(F("ADC_CAL:"));Serial.println(ADC_CAL);
 		parseCSV(colWidthsHtString, S_MAX, 0);
-		parseCSV(fieldWidthsString, S_MAX, 1);
+		parseCSV(fieldWidthsString, S_MAX - 1, 1);
 		parseCSV(dataLocationsString[0], LOCATIONS_MAX, 2);
 		parseCSV(dataLocationsDString[0], LOCATIONS_MAX, 3);
 		parseCSV(dataLocationsString[1], LOCATIONS_MAX, 4);
