@@ -54,6 +54,7 @@ unsigned long pinTimers[3];
 #define RESPONSE_FINDWEATHERVAL 3
 #define RESPONSE_BUFFSZ 512
 #define RESPONSE_BUFFRD 64
+#define RESPONSE_RETRYMAX 50
 char responseBuff[RESPONSE_BUFFSZ + 1] = {0};
 String responseCurrent;
 //0=origin, 1=destination
@@ -151,6 +152,7 @@ int olddataCount;
 int dataChanged;
 int dataRefresh = 1;
 int dataOffset = 0;
+int setMode = 0;
 String dataFields[MAX_ROWS][C_MAX];
 int tagPresent[C_MAX] ={0,0,0,0,0,0,0,0};
 
@@ -490,6 +492,7 @@ void queryDB(String url, String query) {
 	int len,c;
 	size_t size, space;
 	int httpCode;
+	int retry = 0;
 	
 	Serial.print("[HTTPS] begin...\r\n");
 	std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
@@ -498,6 +501,7 @@ void queryDB(String url, String query) {
 	} else {
 		client->setInsecure();
 	}
+	//Serial.println("query:" + query);
 	http.begin(*client, url);
 	http.addHeader("Content-Type", "text/xml");
 	if(query == "null") {
@@ -518,6 +522,7 @@ void queryDB(String url, String query) {
 				size = client->available();
 				space = responseBuff - p + RESPONSE_BUFFSZ - 2;
 				if (size && (responseBuff - p + RESPONSE_BUFFSZ) > (RESPONSE_BUFFRD - 1)) {
+					retry = 0;
 					c = client->readBytes((uint8_t*)p, ((size > space) ? space : size));
 					if (!c) {
 						Serial.println("read timeout");
@@ -528,7 +533,12 @@ void queryDB(String url, String query) {
 						len -= c;
 					}
 				} else {
-					break;
+					delay(50);
+					retry++;
+					Serial.println("Read response retry:" + String(retry));
+					if(retry > RESPONSE_RETRYMAX) {
+						break;
+					}
 				}
 				delay(1);
 			}
@@ -554,6 +564,7 @@ void getData() {
 	dataCount = 0;
 	responseCurrent = "";
 	queryDB(translate(dataURL[dataMode]), translate(dataQuery[dataMode]));
+	Serial.println("Query dataCount:" + String(dataCount));
 	if(dataCount) cleanFields();
 	if(dataCount != olddataCount) {
 		dataChanged = 1;
@@ -777,8 +788,46 @@ void setupStart() {
 	sleepMode = SLEEP_MODE_OFF;
 }
 
+void handleGetData() {
+	String response;
+	int i, j, k;
+	
+	Serial.println("GetData:" + String(dataMode) + ":" + String(dataCount));
+	if(dataMode == 0) {
+		response = "Time,Expected,Platform,Origin,Destination<BR>";
+		k = 5;
+	} else {
+		response = "Time,Temp,Main,Description,Rain mm,Cloud %,Windspeed km/hr <BR>";
+		k = 7;
+	}
+	for(i = 0; i < dataCount; i++) {
+		for(j = 0; j < k; j++) {
+			response += String(dataFields[i][j]);
+			if(j < (k-1)) {
+				response += ",";
+			}
+		}
+		response += "<BR>";
+	}
+	lastChangeTime = millis();
+    server.send(200, "text/html", response);
+}
+
+void handleSetMode() {
+	setMode = server.arg("mode").toInt();
+	if(setMode != 1 && setMode != 2) setMode = 0;
+	if((setMode == 1) && (dataMode == 1) || (setMode == 2) && (dataMode == 0)) {
+		pinChanges[KEY2] = 1;
+	}
+	lastChangeTime = millis();
+	Serial.println("SetMode:" + String(setMode));
+    server.send(200, "text/html", "Mode Changed:" + String(dataMode));
+}
+
 void extraHandlers() {
 	Serial.println("Extra handlers");
+	server.on("/getData", handleGetData);
+	server.on("/setMode", handleSetMode);
 }
  
 void setupEnd() {
@@ -809,8 +858,9 @@ void loop() {
 	dataRefresh = 1;
 	displayData(dataOffset);
 	if((sleepMode == SLEEP_MODE_DEEP) && (millis() > (lastChangeTime  + noChangeTimeout)) || sleepForce) {
+		Serial.println("sleeping");
 		WiFi.mode(WIFI_OFF);
-		delaymSec(10);
+		delaymSec(50);
 		WiFi.forceSleepBegin();
 		delaymSec(1000);
 		if(POWER_HOLD_PIN >=0) pinMode(POWER_HOLD_PIN, INPUT);
@@ -821,7 +871,8 @@ void loop() {
 		wifiConnect(1);
 		delaymSec(timeInterval);
 		elapsedTime++;
-		if(checkButtons()) {
+		if(setMode || checkButtons()) {
+			setMode = 0;
 			c = processButtons();
 			if(c) {
 				if(c == 1) {

@@ -59,6 +59,11 @@ Use samae construction details as trainsAccess
 - If there are more listings than the display size then a short press of the top and bottom buttons will page up and down through the screens.
 - Multiple station, destination codes, and weather cities (up to 4) may be put in the config file (comma separated). A long press of the top bottom will cycle through these combinations.
 
+## URLS
+- ip/firmware (update firmware)
+- ip/getData (returns current data in CSV format) 
+- ip/setMode?mode=n (sets mode n=1 trains, n=2 weather)
+
 ## Links
 Instructables https://www.instructables.com/id/UK-Train-Display/
 
