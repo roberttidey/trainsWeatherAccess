@@ -64,7 +64,6 @@ int responseLocation;
 int timeInterval = 50;
 unsigned long elapsedTime;
 unsigned long startUpTime;
-String updateIntervalsString = "60,60";
 int updateIntervals[2] = {60, 60};
 unsigned long lastChangeTime;
 unsigned long noChangeTimeout = 60000;
@@ -135,11 +134,12 @@ String dataAccessToken[2] = {"",""};
 String dataURL[2] = {"",""};
 String dataQuery[2] = {"",""};
 String dataFingerprint[2] = {"",""};
+uint8_t dataFingerprintC[2][20];
 String dataLocations[2][LOCATIONS_MAX] = {"","","","","","","",""};
 String dataLocationsD[2][LOCATIONS_MAX] = {"","","","","","","",""};
 String dataRows = "5";
 
-String weekDays = "SunMonTueWedThuFriSat";
+char weekDays[7][4] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
 #define BASE_DAY 4
 String weatherCitiesString = "";
 String weatherCities[LOCATIONS_MAX] = {"","","",""};
@@ -153,12 +153,14 @@ int dataChanged;
 int dataRefresh = 1;
 int dataOffset = 0;
 int setMode = 0;
-String dataFields[MAX_ROWS][C_MAX];
+#define CHARS_MAX 100
+char dataFields[MAX_ROWS][CHARS_MAX];
 int tagPresent[C_MAX] ={0,0,0,0,0,0,0,0};
 
 int displayRows = 11;
 int colWidths[S_MAX];
-int fieldWidths[S_MAX];
+int fieldWidths[2][C_MAX];
+int fieldStarts[2][C_MAX];
 String colHdrs[S_MAX] = {"STD","ETD","PL","From","To"};
 int rotation = 1;
 
@@ -174,21 +176,24 @@ void parseCSV(String csv, int fMax, int fType) {
 				colWidths[k] = csv.substring(i,j).toInt();
 				break;
 			case 1:
-				fieldWidths[k] = csv.substring(i,j).toInt();
+				fieldWidths[0][k] = csv.substring(i,j).toInt();
 				break;
 			case 2:
-				dataLocations[0][k] = csv.substring(i,j);
+				fieldWidths[1][k] = csv.substring(i,j).toInt();
 				break;
 			case 3:
-				dataLocationsD[0][k] = csv.substring(i,j);
+				dataLocations[0][k] = csv.substring(i,j);
 				break;
 			case 4:
-				dataLocations[1][k] = csv.substring(i,j);
+				dataLocationsD[0][k] = csv.substring(i,j);
 				break;
 			case 5:
-				weatherCityNames[k] = csv.substring(i,j);
+				dataLocations[1][k] = csv.substring(i,j);
 				break;
 			case 6:
+				weatherCityNames[k] = csv.substring(i,j);
+				break;
+			case 7:
 				updateIntervals[k] = csv.substring(i,j).toInt();
 				if(updateIntervals[k] < 15) updateIntervals[k] = 15;
 				break;
@@ -203,21 +208,24 @@ void parseCSV(String csv, int fMax, int fType) {
 			for(i = k; i < fMax; i++) colWidths[k] = 20;
 			break;
 		case 1:
-			for(i = k; i < fMax; i++) fieldWidths[k] = 8;
+			for(i = k; i < fMax; i++) fieldWidths[0][k] = 8;
 			break;
 		case 2:
-			for(i = k; i < fMax; i++) dataLocations[0][i] = dataLocations[0][i-1];
+			for(i = k; i < fMax; i++) fieldWidths[1][k] = 8;
 			break;
 		case 3:
-			for(i = k; i < fMax; i++) dataLocationsD[0][i] = dataLocationsD[0][i-1];
+			for(i = k; i < fMax; i++) dataLocations[0][i] = dataLocations[0][i-1];
 			break;
 		case 4:
-			for(i = k; i < fMax; i++) dataLocations[1][i] = dataLocations[1][i-1];
+			for(i = k; i < fMax; i++) dataLocationsD[0][i] = dataLocationsD[0][i-1];
 			break;
 		case 5:
-			for(i = k; i < fMax; i++) weatherCityNames[i] = weatherCityNames[i-1];
+			for(i = k; i < fMax; i++) dataLocations[1][i] = dataLocations[1][i-1];
 			break;
 		case 6:
+			for(i = k; i < fMax; i++) weatherCityNames[i] = weatherCityNames[i-1];
+			break;
+		case 7:
 			for(i = k; i < fMax; i++) updateIntervals[i] = updateIntervals[i-1];
 			break;
 	}
@@ -228,9 +236,11 @@ void parseCSV(String csv, int fMax, int fType) {
 */
 void loadConfig() {
 	String colWidthsHtString = "44,66,20,100,100,20";
-	String fieldWidthsString = "5,8,2,12,12";
+	String fieldWidthsStringT = "5,8,2,12,12";
+	String fieldWidthsStringW = "16,6,8,14,6,4,4,10,3";
 	String dataLocationsString[2] = {"",""};
 	String dataLocationsDString[2] = {"",""};
+	String updateIntervalsString = "60,60";
 	String line = "";
 	int config = 0;
 	File f = FILESYS.open(CONFIG_FILE, "r");
@@ -258,11 +268,12 @@ void loadConfig() {
 					case 14: updateIntervalsString = line;break;
 					case 15: noChangeTimeout = line.toInt();break;
 					case 16: colWidthsHtString = line; break;
-					case 17: fieldWidthsString = line; break;
-					case 18: rotation = line.toInt();break;
-					case 19: displayRows = line.toInt();break;
-					case 20: weatherCityNamesString = line;break;
-					case 21:
+					case 17: fieldWidthsStringT = line; break;
+					case 18: fieldWidthsStringW = line; break;
+					case 19: rotation = line.toInt();break;
+					case 20: displayRows = line.toInt();break;
+					case 21: weatherCityNamesString = line;break;
+					case 22:
 						ADC_CAL =line.toFloat();
 						Serial.println(F("Config loaded from file OK"));
 						break;
@@ -292,20 +303,28 @@ void loadConfig() {
 		Serial.print(F("updateIntervals:"));Serial.println(updateIntervalsString);
 		Serial.print(F("noChangeTimeout:"));Serial.println(noChangeTimeout);
 		Serial.print(F("colWidthsHtString:"));Serial.println(colWidthsHtString);
-		Serial.print(F("fieldWidthsString:"));Serial.println(fieldWidthsString);
+		Serial.print(F("fieldWidthsStringT:"));Serial.println(fieldWidthsStringT);
+		Serial.print(F("fieldWidthsStringW:"));Serial.println(fieldWidthsStringW);
 		Serial.print(F("rotation:"));Serial.println(rotation);
 		Serial.print(F("displayRows:"));Serial.println(displayRows);
 		Serial.print(F("weatherCityNames:"));Serial.println(weatherCityNamesString);
 		Serial.print(F("ADC_CAL:"));Serial.println(ADC_CAL);
-		parseCSV(colWidthsHtString, S_MAX, 0);
-		parseCSV(fieldWidthsString, S_MAX - 1, 1);
-		parseCSV(dataLocationsString[0], LOCATIONS_MAX, 2);
-		parseCSV(dataLocationsDString[0], LOCATIONS_MAX, 3);
-		parseCSV(dataLocationsString[1], LOCATIONS_MAX, 4);
-		parseCSV(weatherCityNamesString, LOCATIONS_MAX, 5);
-		parseCSV(updateIntervalsString, 2, 6);
 	} else {
 		Serial.println(String(CONFIG_FILE) + " not found");
+	}
+	parseCSV(colWidthsHtString, S_MAX, 0);
+	parseCSV(fieldWidthsStringT, C_MAX - 1, 1);
+	parseCSV(fieldWidthsStringW, C_MAX - 1, 2);
+	parseCSV(dataLocationsString[0], LOCATIONS_MAX, 3);
+	parseCSV(dataLocationsDString[0], LOCATIONS_MAX, 4);
+	parseCSV(dataLocationsString[1], LOCATIONS_MAX, 5);
+	parseCSV(weatherCityNamesString, LOCATIONS_MAX, 6);
+	parseCSV(updateIntervalsString, 2, 7);
+	fieldStarts[0][0] = 0;
+	fieldStarts[1][0] = 0;
+	for(config = 0; config < (C_MAX - 1);config++) {
+		fieldStarts[0][config + 1] = fieldStarts[0][config] + fieldWidths[0][config] + 1;
+		fieldStarts[1][config + 1] = fieldStarts[1][config] + fieldWidths[1][config] + 1;
 	}
 }
 
@@ -317,7 +336,7 @@ void cleanFields() {
 	
 	for(i = 0; i < C_MAX; i++) {
 		if(tagPresent[i] == 0) {
-			dataFields[dataCount-1][i] = "";
+			dataFields[dataCount][fieldStarts[dataMode][i]] = 0;
 		}
 		tagPresent[i] = 0;
 	}
@@ -330,8 +349,7 @@ void processTag(String tagName, String tagVal) {
 	String tag;
 	int index;
 	int iTag;
-	
-	//Serial.println("t:" + tagName + " v:" + tagVal);
+		
 	iTag = -1;
 	index = tagName.indexOf(':');
 	if(index >=0) {
@@ -385,8 +403,10 @@ void processTag(String tagName, String tagVal) {
 	}
 	if(dataCount && iTag >= 0) {
 		tagPresent[iTag] = 1;
-		if(dataFields[dataCount-1][iTag] != tagVal) {
-			dataFields[dataCount-1][iTag] = tagVal;
+		if(strncmp(dataFields[dataCount-1] + fieldStarts[dataMode][iTag], tagVal.c_str(), fieldWidths[dataMode][iTag])) {
+			strncpy(dataFields[dataCount-1] + fieldStarts[dataMode][iTag], tagVal.c_str(), fieldWidths[dataMode][iTag]);
+			dataFields[dataCount-1][fieldStarts[dataMode][iTag] + fieldWidths[dataMode][iTag]] = 0;
+			//Serial.println("t1:" + tagVal + " :" + String(fieldStarts[dataMode][iTag]) + " :" + String(fieldWidths[dataMode][iTag]));
 			dataChanged = 1;
 		}
 	}
@@ -494,9 +514,9 @@ void queryDB(String url, String query) {
 	int httpCode;
 	int retry = 0;
 	
-	Serial.print("[HTTPS] begin...\r\n");
+	Serial.println("[HTTPS] begin... Heap " + String(ESP.getFreeHeap()));
 	std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
-	if(dataFingerprint[dataMode].length() > 40) {
+	if(0 || dataFingerprint[dataMode].length() > 39) {
 		client->setFingerprint(dataFingerprint[dataMode].c_str());
 	} else {
 		client->setInsecure();
@@ -547,7 +567,9 @@ void queryDB(String url, String query) {
 		Serial.print("[HTTP] ... failed, error:" + http.errorToString(httpCode) + "\n");
 	}
 	Serial.println("http ended");
+	client->stop();
 	http.end();
+	Serial.println("[HTTPS] end... Heap " + String(ESP.getFreeHeap()));
 }
 
 String translate(String msg) {
@@ -555,6 +577,7 @@ String translate(String msg) {
 	msg.replace("%s", dataLocations[dataMode][locationIndex]);
 	msg.replace("%d", dataLocationsD[dataMode][locationIndex]);
 	msg.replace("%r", dataRows);
+	msg.replace("%q", "\"");
 	return msg;
 }
 
@@ -613,42 +636,46 @@ void displayWeatherCell(int index, int x, int y) {
 	int startY = y * TFT_WIDTH / WGRID_ROWS;
 	int centreCell = startX + TFT_HEIGHT / WGRID_COLS / 2;
 	String temp;
-	long weekDay;
+	char tempString[10];
 	int icon;
 	
 	tft.setTextColor(TFT_WHITE, TFT_BLUE);
 	tft.fillRect(startX, startY, TFT_HEIGHT / WGRID_COLS, TFT_WIDTH / WGRID_ROWS, TFT_BLUE);
 	tft.drawRect(startX, startY, TFT_HEIGHT / WGRID_COLS, TFT_WIDTH / WGRID_ROWS, TFT_WHITE);
-	weekDay = ((dataFields[index][W_DT].toInt() / 86400 + BASE_DAY) % 7) * 3;
+	strcpy(tempString, weekDays[(atoi(dataFields[index] + fieldStarts[1][W_DT]) / 86400 + BASE_DAY) % 7]);
+	tempString[3] = '-';
+	strcpy(tempString + 4, dataFields[index] + fieldStarts[1][W_TIME] + 11);
 	startY += 1;
-	tft.drawCentreString(weekDays.substring(weekDay, weekDay + 3) + "-" + dataFields[index][W_TIME].substring(11,16), centreCell, startY, 2);
+	tft.drawCentreString(tempString, centreCell, startY, 2);
 	startY += WGRID_THEIGHT;
 	icon = iconNames.indexOf(dataFields[index][W_ICON]) / 3;
 	if(icon >= 0) {
 		tft.pushImage(centreCell - ICON_WIDTH / 2, startY, ICON_WIDTH, ICON_HEIGHT, weatherIcons[icon], 0xffff);
 	}
 	startY += ICON_HEIGHT + 1;
-	tft.drawCentreString(dataFields[index][W_MAIN], centreCell, startY, 2);
+	tft.drawCentreString(dataFields[index] + fieldStarts[1][W_MAIN], centreCell, startY, 2);
 	startY += WGRID_THEIGHT;
-	temp = dataFields[index][W_TEMP];
-	if(temp.length() > 0) {
-		temp = String(int(round(temp.toFloat() - ABS_ZERO))) + "C";
+	if(strlen(dataFields[index] + fieldStarts[1][W_TEMP]) > 0) {
+		itoa(int(round(atof(dataFields[index] + fieldStarts[1][W_TEMP]) - ABS_ZERO)), tempString, 10);
+		strcpy(tempString + strlen(tempString), "C");
 	} else{
-		temp = "**";
+		strcpy(tempString, "**");
 	}
-	tft.drawCentreString(temp, centreCell, startY, 2);
+	tft.drawCentreString(tempString, centreCell, startY, 2);
 	startY += WGRID_THEIGHT;
-	temp = String(dataFields[index][W_RAIN].toFloat()) + "mm";
-	if(temp == "0.00mm") temp = "Dry";
-	tft.drawCentreString(temp, centreCell, startY, 2);
+	itoa(int(round(atof(dataFields[index] + fieldStarts[1][W_RAIN]))), tempString, 10);
+	strcpy(tempString + strlen(tempString), "mm");
+	if(strcmp(tempString, "0mm") == 0) strcpy(tempString, "Dry");
+	tft.drawCentreString(tempString, centreCell, startY, 2);
 	startY += WGRID_THEIGHT;
-	temp = dataFields[index][W_WIND];
-	if(temp.length() > 0) {
-		temp = String(int(round(temp.toFloat() * 3.6))) + "km/hr";
+	tft.drawCentreString(temp, centreCell, startY, 2);
+	if(strlen(dataFields[index] + fieldStarts[1][W_WIND]) > 0) {
+		itoa(int(round(atof(dataFields[index] + fieldStarts[1][W_WIND]) * 3.6)), tempString, 10);
+		strcpy(tempString + strlen(tempString), "km/hr");
 	} else{
-		temp = "**";
+		strcpy(tempString, "**");
 	}
-	tft.drawCentreString(temp, centreCell, startY, 2);
+	tft.drawCentreString(tempString, centreCell, startY, 2);
 }
 
 void displayData(int start) {
@@ -670,9 +697,9 @@ void displayData(int start) {
 						if(j < S_MAX) {
 							x1 = x + colWidths[j] / 2;
 							x+= colWidths[j];
-							tft.drawCentreString(dataFields[i + start][j].substring(0,fieldWidths[j]),x1,y,2);
+							tft.drawCentreString(dataFields[i + start] + fieldStarts[dataMode][j],x1,y,2);
 						}
-						//Serial.print(dataFields[i + start][j] + ",");
+						//Serial.print(dataFields[i + start] + fieldStarts[fataMode][j] + ",");
 					}
 				}
 				//Serial.println();
@@ -802,7 +829,7 @@ void handleGetData() {
 	}
 	for(i = 0; i < dataCount; i++) {
 		for(j = 0; j < k; j++) {
-			response += String(dataFields[i][j]);
+			response += String(dataFields[i] + fieldStarts[dataMode][j]);
 			if(j < (k-1)) {
 				response += ",";
 			}
@@ -824,10 +851,27 @@ void handleSetMode() {
     server.send(200, "text/html", "Mode Changed:" + String(dataMode));
 }
 
+//action request to save config
+void handleSaveConfig() {
+	File f;
+	String config = server.arg("config");
+	f = SPIFFS.open(CONFIG_FILE, "w");
+	if(f) {
+		f.print(config);
+		f.close();
+		loadConfig();
+		server.send(200, "text/plain", "config saved");
+	} else {
+		server.send(200, "text/plain", "error saving config");
+	}
+}
+
+
 void extraHandlers() {
 	Serial.println("Extra handlers");
 	server.on("/getData", handleGetData);
 	server.on("/setMode", handleSetMode);
+	server.on("/saveconfig", handleSaveConfig);
 }
  
 void setupEnd() {

@@ -63,6 +63,7 @@ Use samae construction details as trainsAccess
 - ip/firmware (update firmware)
 - ip/getData (returns current data in CSV format) 
 - ip/setMode?mode=n (sets mode n=1 trains, n=2 weather)
+- ip Gives Browser access to train or weather data
 
 ## Links
 Instructables https://www.instructables.com/id/UK-Train-Display/
