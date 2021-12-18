@@ -1,8 +1,6 @@
 #Config file for weather / train access
-# lines are 
-#host;trainsAccessToken;trainsURL;trainsStationQuery;trainsFingerprint;trainsStation;trainsDestinations;trainsRows;
-#weatherAccessToken;weatherURL;weatherQuery;weatherFingerprint;weatherCityCodes
-#sleepMode;updateIntervals;noChangeTimeout;colWidthsHeight;fieldWidths;rotation;displayRows;weatherCityNames;ADC_CAL
+#lines are 
+#;host;trainsAccessToken;trainsURL;trainsStationQuery;trainsFingerprint;trainsStation;trainsDestinations;trainsRows;weatherAccessToken;weatherURL;weatherQuery;weatherFingerprint;weatherCityCodes;sleepMode;updateIntervals;noChangeTimeout;colWidthsHeight;fieldWidthsT;fieldWidthsW;rotation;displayRows;weatherCityNames;ADC_CAL
 esp8266-trainsA
 11111111-2222-3333-4444-555555555555
 https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb11.asmx

@@ -854,10 +854,9 @@ void handleSetMode() {
 //action request to save config
 void handleSaveConfig() {
 	File f;
-	String config = server.arg("config");
 	f = SPIFFS.open(CONFIG_FILE, "w");
 	if(f) {
-		f.print(config);
+		f.print(server.arg("config"));
 		f.close();
 		loadConfig();
 		server.send(200, "text/plain", "config saved");

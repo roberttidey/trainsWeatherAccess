@@ -1,14 +1,216 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-<head>
-<meta name = "viewport" content = "width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
-<title>ESP8266 Train Display</title>
-<style>
-"body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; font-size: xx-large}"
-</style>
-</head>
-<body>
-<h1>Train Display</h1>
-<P>
-Use ip/edit to change settings file
+	<head>
+		<!--Import Google Icon Font-->
+		<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<!--Import materialize.css-->
+		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/css/materialize.min.css" media="screen,projection" />
+		<link rel="icon" sizes="192x192" href="/favicon.png">
+
+		<!--Let browser know website is optimized for mobile-->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+		<meta charset="utf-8"/>
+		<title>Trains+Weather</title>
+	</head>
+
+	<body>
+		<header>
+			<div class="awTitle">Trains+Weather</div>
+		</header>
+		<div class="container" id="events">
+			<div class = "row">
+				<div class = "col s12">
+					<ul class = "tabs">
+						<li class = "tab col s4"><a class = "active" href = "#data">Data</a></li>
+						<li class = "tab col s4 "><a href = "#config">Config</a></li>
+					</ul>
+				</div>
+				<div id = "data" class = "tab col s12">
+					<div id = "dataTable" class = "tab col s12"></div>
+					<a class="btn green" id="setmode" style="width:160px;height:24px">Weather</a>
+				</div>
+				<div id = "config" class = "tab col s12">
+					<div id = "configTable" class = "tab col s12"></div>
+					<a class="btn green" id="saveconfig" style="width:80px;height:24px">Save</a>
+				</div>
+			</div> 
+		</div>
+		<style type="text/css">
+			.btn_grid {
+				margin: 3px 0;
+			}
+			.btn {
+				height: 28px;
+				line-height: 28px;
+			}
+			.awTitle {
+				display:inline-block;
+				font-size: x-large;
+				padding-left:20px;
+				width:200px;
+			}
+			header {
+				position:absolute;
+				top:0px;
+				left:0px;
+				height:32px;
+				right:0px;
+				overflow:hidden;
+				background:red;
+				color:white;
+			}
+			.container {
+				position:absolute;
+				top:32px;
+				bottom:0px;
+				left:10px;
+				right:60px;
+				overflow-y:auto;
+				overflow-x:hidden;
+			}
+			.tab {
+				overflow-x:hidden;
+			}
+			tr {
+				line-height: 20px;
+			}
+			th, td {
+				padding: 1px;
+			}
+		</style>
+	
+		<!--Import jQuery before materialize.js-->
+		<script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/js/materialize.min.js"></script>
+		<script type="text/javascript">(function($){
+$(function(){
+	var host = window.location.hostname;
+	var configTitles = 'Parameter,Value';
+	var cCount;
+	var dataType = 0;
+	var namesRecord;
+	  
+	// ******************************************************************
+	// init()
+	// ******************************************************************
+	function init() {
+		loadData();
+		loadConfigTable();
+	}
+	
+	function loadData() {
+		// Load schedule
+		$.get("http://" + host + "/getData", function(data) {
+			var lines = data.split("<BR>");
+			var data_html = '<table id="dataValues" class="striped"><thead>';
+			var dataFields = [];
+			var i = 0;
+			var c = 0;
+			
+			$.each(lines, function(n, dataRecord) {
+				if(dataRecord.length > 0 && dataRecord.charAt(0) != '#') {
+					dataFields = dataRecord.split(",");
+					data_html += '<tr>';
+					c = 0;
+					if(i == 0) {
+						dataType = (dataFields.length > 5) ? 1 : 0;
+						$.each(dataFields, function(n, dataField) {
+							data_html += '<th>' + dataField + '</th>'; 
+						});
+					} else {
+						$.each(dataFields, function(n, dataField) {
+							if(dataType == 1) {
+								if(c == 1) dataField = (parseFloat(dataField) - 273.16).toFixed(2);
+								if(c == 6) dataField = (parseFloat(dataField) * 3.6).toFixed(1);
+							}
+							data_html += '<td>' + dataField + '</td>'; 
+							c++;
+						});
+					}
+					data_html += '</tr>';
+					if(i == 0) {
+						data_html += '</thead><tbody>';
+					}
+					i++;
+				}
+			});
+			data_html += '</tbody></table>';
+
+			$('#dataTable').html(data_html);
+			$('#setmode').text((dataFields.length > 5) ? "Trains" : "Weather");
+		});
+	}
+	
+	function loadConfigTable() {
+		// Load config
+		$.get("http://" + host + "/trainsWeatherConfig.txt", function(data) {
+			var lines = data.split("\n");
+			var configTable_html = '<table id="configValues"><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody>';
+			var i;
+			var nameFields = [];
+
+			cCount = 0;
+			$.each(lines, function(n, urlRecord) {
+				if(urlRecord.length > 0) {
+					if(urlRecord.charAt(0) == '#') {
+						if(urlRecord.charAt(1) == ";") {
+							namesRecord = urlRecord;
+							nameFields = urlRecord.split(";");
+						}
+					} else if (cCount < nameFields.length) {
+						configTable_html += '<tr>'; 
+						configTable_html += '<td><input readonly id="cName_' + cCount + '" style="width:200px;height:16px" value="' + nameFields[cCount+1] + '" type="text"></td>'; 
+						configTable_html += '<td><input id="cValue_' + cCount + '" style="width:200px;height:16px" value="' + urlRecord + '" type="text"></td>'; 
+						configTable_html += '</tr>';
+						cCount++;
+					}
+				}
+			});
+			configTable_html += '</table>';
+			$('#configTable').html(configTable_html);
+		});
+	}
+	function switchMode() {
+		var mode = dataType ? "1" : "2";
+		$.get("http://" + host + "/setMode?mode=" + mode, function(data) {
+			loadData();
+		});
+		
+	}
+	
+	// ******************************************************************
+	// Actions
+	// ******************************************************************	
+	$("#config").on("click", "#saveconfig", function() {
+		var btn = $(this);
+		saveConfig();
+	});
+	
+	function saveConfig() {
+		var config = "#Config file for weather / train access\n# lines are\n" + namesRecord + "\n";
+		var i;
+
+		for (var r = 0; r < cCount; r++) {
+            config += document.getElementById('cValue_' + r).value + "\n";
+        }
+		$.post("http://" + host + "/saveconfig", {'config':config});
+	}
+	
+	$("#setmode").on("click", function() {
+		switchMode();
+	});
+
+	function refresh(updateRate) {
+	   setInterval(function(){ loadData(); }, updateRate);
+	}
+	
+	// ******************************************************************
+	// main
+	// ******************************************************************
+	init();
+	refresh(30000);
+	
+}); // end of document ready
+})(jQuery); // end of jQuery name space</script>
+	</body>
 </html>

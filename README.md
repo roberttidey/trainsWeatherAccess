@@ -16,7 +16,8 @@ Use samae construction details as trainsAccess
 - 320 x 240 LCD display with 3 control buttons
 - Normally the module sleeps after a time but can be turned into a non sleep mode for checking and configuration
 - Configuration data in a file to allow set up of major parameters
-- Web based file access to update config file
+- Web based file access
+- Browser access to view data and edit config
 - Software can be updated via web interface
 - Low cost
 - 3D printed enclosure
@@ -63,7 +64,7 @@ Use samae construction details as trainsAccess
 - ip/firmware (update firmware)
 - ip/getData (returns current data in CSV format) 
 - ip/setMode?mode=n (sets mode n=1 trains, n=2 weather)
-- ip Gives Browser access to train or weather data
+- ip Gives Browser access to train or weather data and config
 
 ## Links
 Instructables https://www.instructables.com/id/UK-Train-Display/
