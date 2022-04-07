@@ -237,7 +237,7 @@ void parseCSV(String csv, int fMax, int fType) {
 void loadConfig() {
 	String colWidthsHtString = "44,66,20,100,100,20";
 	String fieldWidthsStringT = "5,8,2,12,12";
-	String fieldWidthsStringW = "16,6,8,14,6,4,4,10,3";
+	String fieldWidthsStringW = "16,6,8,14,6,4,4,10,11";
 	String dataLocationsString[2] = {"",""};
 	String dataLocationsDString[2] = {"",""};
 	String updateIntervalsString = "60,60";
@@ -313,8 +313,8 @@ void loadConfig() {
 		Serial.println(String(CONFIG_FILE) + " not found");
 	}
 	parseCSV(colWidthsHtString, S_MAX, 0);
-	parseCSV(fieldWidthsStringT, C_MAX - 1, 1);
-	parseCSV(fieldWidthsStringW, C_MAX - 1, 2);
+	parseCSV(fieldWidthsStringT, C_MAX, 1);
+	parseCSV(fieldWidthsStringW, C_MAX, 2);
 	parseCSV(dataLocationsString[0], LOCATIONS_MAX, 3);
 	parseCSV(dataLocationsDString[0], LOCATIONS_MAX, 4);
 	parseCSV(dataLocationsString[1], LOCATIONS_MAX, 5);
@@ -403,10 +403,10 @@ void processTag(String tagName, String tagVal) {
 	}
 	if(dataCount && iTag >= 0) {
 		tagPresent[iTag] = 1;
-		if(strncmp(dataFields[dataCount-1] + fieldStarts[dataMode][iTag], tagVal.c_str(), fieldWidths[dataMode][iTag])) {
+		if(strncmp(dataFields[dataCount-1] + fieldStarts[dataMode][iTag], tagVal.c_str(), fieldWidths[dataMode][iTag]) != 0) {
 			strncpy(dataFields[dataCount-1] + fieldStarts[dataMode][iTag], tagVal.c_str(), fieldWidths[dataMode][iTag]);
 			dataFields[dataCount-1][fieldStarts[dataMode][iTag] + fieldWidths[dataMode][iTag]] = 0;
-			//Serial.println("t1:" + tagVal + " :" + String(fieldStarts[dataMode][iTag]) + " :" + String(fieldWidths[dataMode][iTag]));
+			//Serial.println("t1:" + String(iTag) + " :" + tagVal + " :" + String(fieldStarts[dataMode][iTag]) + " :" + String(fieldWidths[dataMode][iTag]));
 			dataChanged = 1;
 		}
 	}
