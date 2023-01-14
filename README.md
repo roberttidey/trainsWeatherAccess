@@ -4,7 +4,9 @@ Enhanced version of trainsAccess Display
 Displays current departures from a particular UK rail station
 Displays 5 day weather forecast for worldide cities
 
-Use samae construction details as trainsAccess
+This replaces trainsAccess
+If you want trains only usage set the line in trainsWeatherConfig.txt for the weather URL to null
+If you want weather only usage set the line in trainsWeatherConfig.txt for the trains URL to null AND in the ino file change the dataMode = 0 to dataMode = 1 
 
 ## Features
 - Accesses National Rail station database to get departure times for a specified station

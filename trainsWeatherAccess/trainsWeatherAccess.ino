@@ -1,4 +1,4 @@
-/*
+  /*
  R. J. Tidey 2019/08/22
  Train times and weather display
  Designed to run on battery with deep sleep after a timeoutbut can be overridden for maintenance
@@ -774,13 +774,15 @@ int processButtons() {
 		dataRefresh = 0;
 		pinChanges[KEY2] = 0;
 	} else if (pinChanges[KEY2] == 1) {
-		//Short press
-		dataMode++;
-		if(dataMode > 1) dataMode = 0;
-		Serial.println("dataMode:" + String(dataMode));
-		initDisplay(0);
-		dataOffset = 0;
-		changed = 1;
+		//Short press toggle weather trains if URL if set up
+		if((dataMode == 0 && dataURL[1] != "null") || (dataMode == 1 && dataURL[0] != "null")) {
+			dataMode++;
+			if(dataMode > 1) dataMode = 0;
+			Serial.println("dataMode:" + String(dataMode));
+			initDisplay(0);
+			dataOffset = 0;
+			changed = 1;
+		}
 		pinChanges[KEY2] = 0;
 	} else if (pinChanges[KEY3] == 2) {
 		//Long press
