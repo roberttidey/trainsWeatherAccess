@@ -49,7 +49,7 @@ If you want weather only usage set the line in trainsWeatherConfig.txt for the t
 	- Change codes for destination or leave blank for all destinations
 	- Change city codes for weather
 	- Change refresh and sleep settings as required
-- Ipload the files in data folder using http:ip/upload
+- Upload the files in data folder using http:ip/upload
 - Further file access can use http:ip/edit
 - For software updating export a binary and then access http:/ip/firmware
 - Note tha thte site fingerprint for https access may change if the security certificate of the National rail site is renewed. This can be seen in a browser and used to update the config file. You can also leave this line blank to skip the certificate check.
