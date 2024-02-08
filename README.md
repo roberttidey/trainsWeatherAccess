@@ -52,7 +52,7 @@ If you want weather only usage set the line in trainsWeatherConfig.txt for the t
 - Upload the files in data folder using http:ip/upload
 - Further file access can use http:ip/edit
 - For software updating export a binary and then access http:/ip/firmware
-- Note tha thte site fingerprint for https access may change if the security certificate of the National rail site is renewed. This can be seen in a browser and used to update the config file. You can also leave this line blank to skip the certificate check.
+- Note tha thte site fingerprint for https access may change if the security certificate of the National rail site or weather site is renewed. See below, You can also leave this line blank to skip the certificate check.
 
 ## Usage
 - Middle button is used to turn unit on. It will automatically get current times and refresh at the specified interval
@@ -67,6 +67,18 @@ If you want weather only usage set the line in trainsWeatherConfig.txt for the t
 - ip/getData (returns current data in CSV format) 
 - ip/setMode?mode=n (sets mode n=1 trains, n=2 weather)
 - ip Gives Browser access to train or weather data and config
+
+## Certificate fingerprints
+- To get the fingerprints, access the raw site url from a browser
+	- https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb11.asmx
+	- https://api.openweathermap.org/data/2.5/forecast
+- View site information (icon to the left of the url)
+- Click connection is secure/certificate is valid/Details
+- Click export, choose a location to stotr certificate file.
+- generate fingerprint using openssl
+	- For windows open cmd window, cd yo folder where certificate files are
+	- "C:\Program Files\Git\usr\bin\openssl" x509 -fingerprint -noout -in [certificateMame].crt
+- Copy and paste fingerprints into the config file
 
 ## Links
 Instructables https://www.instructables.com/id/UK-Train-Display/
